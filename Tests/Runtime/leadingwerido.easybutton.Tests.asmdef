@@ -1,0 +1,8 @@
+{
+	"name": "leadingwerido.easybutton.Tests",
+	"rootNamespace": "LW.Util.EasyButton.Tests",
+	"references": [
+		"leadingwerido.easybutton",
+		"leadingwerido.easybutton.Editor"
+	]
+}
