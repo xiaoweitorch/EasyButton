@@ -31,7 +31,7 @@ namespace LW.Util.EasyButton.Tests
             return a;
         }
 
-        [EasyButton(3, null, false)]
+        [EasyButton(3, null, false, Order = 1)]
         public int LogWithParam(int a, Transform tf, bool c = true)
         {
             Debug.LogError($"a={a} transform={tf}");

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using LW.Util.EasyButton.Editor.View;
 using UnityEngine.UIElements;
@@ -244,9 +245,10 @@ namespace LW.Util.EasyButton.Editor
 
             Info     = info;
             Instance = instance;
+            var sortedInfos = Info.Infos.OrderByDescending(i => i.Order);
             if (Info.Infos.Count <= 1)
             {
-                foreach (var buttonInfo in Info.Infos)
+                foreach (var buttonInfo in sortedInfos)
                 {
                     var buttonView = CreateButtonView(buttonInfo);
                     Add(buttonView);
@@ -254,7 +256,7 @@ namespace LW.Util.EasyButton.Editor
             }
             else
             {
-                foreach (var buttonInfo in Info.Infos)
+                foreach (var buttonInfo in sortedInfos)
                 {
                     var buttonView = CreateButtonView(buttonInfo);
                     Container.Add(buttonView);

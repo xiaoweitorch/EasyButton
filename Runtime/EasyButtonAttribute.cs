@@ -4,9 +4,15 @@ namespace LW.Util.EasyButton
 {
     public class EasyButtonAttribute : Attribute
     {
-        public string   Name          { get; set; }
+        #region optional params
+
+        public string Name  { get; set; }
+        public int    Order { get; set; }
+
+        #endregion
+
         public object[] DefaultValues { get; }
-        
+
         public EasyButtonAttribute()
         {
         }

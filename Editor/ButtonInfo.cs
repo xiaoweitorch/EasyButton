@@ -42,6 +42,7 @@ namespace LW.Util.EasyButton.Editor
         public string     DisplayName { get; }
         public bool       IsStatic    => Info.IsStatic;
         public MethodInfo Info        { get; }
+        public int        Order       { get; }
 
         public ButtonInfo(MethodInfo methodInfo)
         {
@@ -61,6 +62,7 @@ namespace LW.Util.EasyButton.Editor
             // HACK: lw 暂时处理无参、无返回值情况
             Info        = methodInfo;
             DisplayName = easyButtonAttribute.Name ?? methodInfo.Name;
+            Order       = easyButtonAttribute.Order;
             var methodParameters = methodInfo.GetParameters();
             if (methodInfo.IsStatic)
             {
