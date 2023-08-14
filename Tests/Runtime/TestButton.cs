@@ -12,7 +12,7 @@ namespace LW.Util.EasyButton.Tests
             Debug.LogError($"[EasyButton]log error");
         }
         
-        [EasyButton("TestName")]
+        [EasyButton(Name = "TestName")]
         public void LogErrorWithName()
         {
             Debug.LogError($"[EasyButton]log error with name");
@@ -24,14 +24,14 @@ namespace LW.Util.EasyButton.Tests
             Debug.LogError($"[EasyButton]static log error");
         }
 
-        [EasyButton]
+        [EasyButton(3)]
         public static int StaticLogWithParam(int a = 2)
         {
             Debug.LogError($"a={a}");
             return a;
         }
 
-        [EasyButton]
+        [EasyButton(3, null, false)]
         public int LogWithParam(int a, Transform tf, bool c = true)
         {
             Debug.LogError($"a={a} transform={tf}");

@@ -4,15 +4,16 @@ namespace LW.Util.EasyButton
 {
     public class EasyButtonAttribute : Attribute
     {
-        public string Name { get; }
+        public string   Name          { get; set; }
+        public object[] DefaultValues { get; }
         
         public EasyButtonAttribute()
         {
         }
-        
-        public EasyButtonAttribute(string name)
+
+        public EasyButtonAttribute(params object[] defaultValues)
         {
-            Name = name;
+            DefaultValues = defaultValues;
         }
     }
 }

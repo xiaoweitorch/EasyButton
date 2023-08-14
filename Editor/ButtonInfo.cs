@@ -121,6 +121,12 @@ namespace LW.Util.EasyButton.Editor
                 {
                     return null;
                 }
+
+                if (easyButtonAttribute.DefaultValues != null &&
+                    easyButtonAttribute.DefaultValues.Length != methodParameters.Length)
+                {
+                    return null;
+                }
             
                 var variableList = new List<ParameterExpression>();
                 var bodyList     = new List<Expression>();
@@ -137,13 +143,15 @@ namespace LW.Util.EasyButton.Editor
                     var assignExpression = Expression.Assign(variable, newParameterInfo);
                     bodyList.Add(assignExpression);
 
-                    if (!methodParameter.HasDefaultValue)
+                    var attributeDefaultValue = easyButtonAttribute.DefaultValues?[index];
+                    if (!methodParameter.HasDefaultValue && attributeDefaultValue == null)
                     {
                         continue;
                     }
+                    
                     var valueExpression = Expression.PropertyOrField(variable, nameof(ParameterInfo<int>.InnerValue));
                     var assignDefaultExpression =
-                        Expression.Assign(valueExpression, Expression.Constant(methodParameter.DefaultValue));
+                        Expression.Assign(valueExpression, Expression.Constant(attributeDefaultValue ?? methodParameter.DefaultValue));
                     bodyList.Add(assignDefaultExpression);
                 }
 
