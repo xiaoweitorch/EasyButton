@@ -223,11 +223,15 @@ namespace LW.Util.EasyButton.Editor
 
     public class ButtonsView : VisualElement
     {
-        public ButtonsInfo Info     { get; private set; }
-        public object      Instance { get; private set; }
+        public ButtonsInfo Info      { get; private set; }
+        public object      Instance  { get; private set; }
+        public Foldout     Container { get; }
 
         public ButtonsView()
         {
+            Container       = new Foldout();
+            Container.text  = "Easy Button";
+            Container.value = false;
         }
 
         public void Initialize(ButtonsInfo info, object instance)
@@ -240,37 +244,55 @@ namespace LW.Util.EasyButton.Editor
 
             Info     = info;
             Instance = instance;
-            foreach (var buttonInfo in Info.Infos)
+            if (Info.Infos.Count <= 1)
             {
-                if (buttonInfo.IsStatic)
+                foreach (var buttonInfo in Info.Infos)
                 {
-                    if (buttonInfo.Info.GetParameters().Length > 0)
-                    {
-                        var buttonView = new ButtonStaticWithParamsView();
-                        buttonView.Initialize(buttonInfo);
-                        Add(buttonView);
-                    }
-                    else
-                    {
-                        var buttonView = new ButtonStaticWithoutParamsView();
-                        buttonView.Initialize(buttonInfo);
-                        Add(buttonView);
-                    }
+                    var buttonView = CreateButtonView(buttonInfo);
+                    Add(buttonView);
+                }
+            }
+            else
+            {
+                foreach (var buttonInfo in Info.Infos)
+                {
+                    var buttonView = CreateButtonView(buttonInfo);
+                    Container.Add(buttonView);
+                }
+                Add(Container);
+            }
+        }
+
+        private VisualElement CreateButtonView(ButtonInfo buttonInfo)
+        {
+            if (buttonInfo.IsStatic)
+            {
+                if (buttonInfo.Info.GetParameters().Length > 0)
+                {
+                    var buttonView = new ButtonStaticWithParamsView();
+                    buttonView.Initialize(buttonInfo);
+                    return buttonView;
                 }
                 else
                 {
-                    if (buttonInfo.Info.GetParameters().Length > 0)
-                    {
-                        var buttonView = new ButtonWithParamsView();
-                        buttonView.Initialize(buttonInfo, instance);
-                        Add(buttonView);
-                    }
-                    else
-                    {
-                        var buttonView = new ButtonWithoutParamsView();
-                        buttonView.Initialize(buttonInfo, instance);
-                        Add(buttonView);
-                    }
+                    var buttonView = new ButtonStaticWithoutParamsView();
+                    buttonView.Initialize(buttonInfo);
+                    return buttonView;
+                }
+            }
+            else
+            {
+                if (buttonInfo.Info.GetParameters().Length > 0)
+                {
+                    var buttonView = new ButtonWithParamsView();
+                    buttonView.Initialize(buttonInfo, Instance);
+                    return buttonView;
+                }
+                else
+                {
+                    var buttonView = new ButtonWithoutParamsView();
+                    buttonView.Initialize(buttonInfo, Instance);
+                    return buttonView;
                 }
             }
         }
@@ -280,6 +302,8 @@ namespace LW.Util.EasyButton.Editor
             Info     = null;
             Instance = null;
             Clear();
+            Container.Clear();
+            Container.value = false;
         }
     }
 }
