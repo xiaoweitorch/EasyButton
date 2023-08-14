@@ -25,20 +25,20 @@ namespace LW.Util.EasyButton.Tests
         }
 
         [EasyButton]
-        public static int StaticLogWithParam(int a)
+        public static int StaticLogWithParam(int a = 2)
         {
             Debug.LogError($"a={a}");
             return a;
         }
 
         [EasyButton]
-        public int LogWithParam(int a, Transform tf)
+        public int LogWithParam(int a, Transform tf, bool c = true)
         {
             Debug.LogError($"a={a} transform={tf}");
             return a;
         }
 
-        // TODO: lw not support
+        // TODO: lw not support return value
         [EasyButton]
         public int LogErrorWithReturn()
         {

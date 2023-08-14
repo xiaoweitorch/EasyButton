@@ -61,9 +61,9 @@ namespace LW.Util.EasyButton.Editor
             // HACK: lw 暂时处理无参、无返回值情况
             Info        = methodInfo;
             DisplayName = easyButtonAttribute.Name ?? methodInfo.Name;
+            var methodParameters = methodInfo.GetParameters();
             if (methodInfo.IsStatic)
             {
-                var methodParameters = methodInfo.GetParameters();
                 if (methodParameters.Length == 0)
                 {
                     var invoke = Expression.Call(methodInfo);
@@ -83,23 +83,10 @@ namespace LW.Util.EasyButton.Editor
 
                     var invoke = Expression.Call(methodInfo, parametersConvertList);
                     TriggerStaticWithParams = Expression.Lambda<Action<object[]>>(invoke, parameters).Compile();
-
-                    var createParameterList = new List<Expression>();
-                    for (var index = 0; index < methodParameters.Length; ++index)
-                    {
-                        var methodParameter  = methodParameters[index];
-                        var parameterType    = typeof(ParameterInfo<>).MakeGenericType(methodParameter.ParameterType);
-                        var newParameterInfo = Expression.New(parameterType);
-                        createParameterList.Add(newParameterInfo);
-                    }
-
-                    var createArray = Expression.NewArrayInit(typeof(IParameterInfo), createParameterList);
-                    CreateDefaultParams = Expression.Lambda<Func<IParameterInfo[]>>(createArray).Compile();
                 }
             }
             else
             {
-                var methodParameters = methodInfo.GetParameters();
                 if (methodParameters.Length == 0)
                 {
                     var p        = Expression.Parameter(typeof(object), "obj");
@@ -123,19 +110,47 @@ namespace LW.Util.EasyButton.Editor
 
                     var invoke = Expression.Call(instance, methodInfo, parametersConvertList);
                     TriggerWithParams = Expression.Lambda<Action<object, object[]>>(invoke, p, parameters).Compile();
-
-                    var createParameterList = new List<Expression>();
-                    for (var index = 0; index < methodParameters.Length; ++index)
-                    {
-                        var methodParameter  = methodParameters[index];
-                        var parameterType    = typeof(ParameterInfo<>).MakeGenericType(methodParameter.ParameterType);
-                        var newParameterInfo = Expression.New(parameterType);
-                        createParameterList.Add(newParameterInfo);
-                    }
-
-                    var createArray = Expression.NewArrayInit(typeof(IParameterInfo), createParameterList);
-                    CreateDefaultParams = Expression.Lambda<Func<IParameterInfo[]>>(createArray).Compile();
                 }
+            }
+
+            CreateDefaultParams =  CreateDefaultParamsFunc();
+            
+            Func<IParameterInfo[]> CreateDefaultParamsFunc()
+            {
+                if (methodParameters.Length == 0)
+                {
+                    return null;
+                }
+            
+                var variableList = new List<ParameterExpression>();
+                var bodyList     = new List<Expression>();
+                for (var index = 0; index < methodParameters.Length; ++index)
+                {
+                    var methodParameter = methodParameters[index];
+
+                    var parameterType    = typeof(ParameterInfo<>).MakeGenericType(methodParameter.ParameterType);
+                    var newParameterInfo = Expression.New(parameterType);
+                        
+                    var variable = Expression.Variable(parameterType);
+                    variableList.Add(variable);
+                        
+                    var assignExpression = Expression.Assign(variable, newParameterInfo);
+                    bodyList.Add(assignExpression);
+
+                    if (!methodParameter.HasDefaultValue)
+                    {
+                        continue;
+                    }
+                    var valueExpression = Expression.PropertyOrField(variable, nameof(ParameterInfo<int>.InnerValue));
+                    var assignDefaultExpression =
+                        Expression.Assign(valueExpression, Expression.Constant(methodParameter.DefaultValue));
+                    bodyList.Add(assignDefaultExpression);
+                }
+
+                var createArray = Expression.NewArrayInit(typeof(IParameterInfo), variableList);
+                bodyList.Add(createArray);
+                return Expression.Lambda<Func<IParameterInfo[]>>(Expression.Block(
+                                                                                 variableList, bodyList)).Compile();
             }
         }
     }
