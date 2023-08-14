@@ -1,4 +1,5 @@
-﻿using System;
+﻿#undef UNITY_2022_3_OR_NEWER
+using System;
 using System.Collections.Generic;
 using UnityEngine.UIElements;
 
@@ -11,13 +12,21 @@ namespace LW.Util.EasyButton.Editor.View
 
         private Action<TObj, uint> _setValueFunc;
         private Func<TObj, uint>   _getValueFunc;
-        private TObj              Data { get; set; }
-        
+        private TObj               Data { get; set; }
+
+        #if UNITY_2022_3_OR_NEWER
         private UnsignedIntegerField FieldView { get; set; }
+        #else
+        private IntegerField FieldView { get; set; }
+        #endif
 
         public UIntegerPropertyView()
         {
+            #if UNITY_2022_3_OR_NEWER
             FieldView = new UnsignedIntegerField();
+            #else
+            FieldView = new IntegerField();
+            #endif
             Add(FieldView);
             FieldView.RegisterValueChangedCallback(OnValueChanged);
         }
@@ -39,7 +48,7 @@ namespace LW.Util.EasyButton.Editor.View
             }
 
             Data = data;
-            FieldView.SetValueWithoutNotify(_getValueFunc?.Invoke(Data) ?? 0);
+            FieldView.SetValueWithoutNotify(Convert.ToInt32(_getValueFunc?.Invoke(Data) ?? 0));
             FieldView.label = fieldPath.Split(".")[^1];
         }
 
@@ -51,14 +60,14 @@ namespace LW.Util.EasyButton.Editor.View
             _getValueFunc = null;
         }
 
-        private void OnValueChanged(ChangeEvent<uint> evt)
+        private void OnValueChanged(ChangeEvent<int> evt)
         {
             if (Data == null)
             {
                 return;
             }
-            
-            _setValueFunc?.Invoke(Data, evt.newValue);
+
+            _setValueFunc?.Invoke(Data, Convert.ToUInt32(evt.newValue));
         }
     }
 }
