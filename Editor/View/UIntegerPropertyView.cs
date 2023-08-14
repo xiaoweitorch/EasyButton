@@ -47,7 +47,13 @@ namespace LW.Util.EasyButton.Editor.View
             }
 
             Data = data;
-            FieldView.SetValueWithoutNotify(Convert.ToInt32(_getValueFunc?.Invoke(Data) ?? 0));
+            FieldView.SetValueWithoutNotify(
+                                            #if UNITY_2022_3_OR_NEWER
+                                            _getValueFunc?.Invoke(Data) ?? 0
+                                            #else
+                                            Convert.ToInt32(_getValueFunc?.Invoke(Data) ?? 0)
+                                            #endif
+                                           );
             FieldView.label = fieldPath.Split(".")[^1];
         }
 
@@ -59,6 +65,17 @@ namespace LW.Util.EasyButton.Editor.View
             _getValueFunc = null;
         }
 
+        #if UNITY_2022_3_OR_NEWER
+        private void OnValueChanged(ChangeEvent<uint> evt)
+        {
+            if (Data == null)
+            {
+                return;
+            }
+
+            _setValueFunc?.Invoke(Data, evt.newValue);
+        }
+        #else
         private void OnValueChanged(ChangeEvent<int> evt)
         {
             if (Data == null)
@@ -68,5 +85,6 @@ namespace LW.Util.EasyButton.Editor.View
 
             _setValueFunc?.Invoke(Data, Convert.ToUInt32(evt.newValue));
         }
+        #endif
     }
 }
