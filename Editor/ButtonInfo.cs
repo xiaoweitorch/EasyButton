@@ -44,6 +44,8 @@ namespace LW.Util.EasyButton.Editor
         public MethodInfo Info          { get; }
         public int        Order         { get; }
         public bool       DefaultExpand { get; }
+        
+        public EnableMode EnableMode { get; }
 
         public ButtonInfo(MethodInfo methodInfo)
         {
@@ -65,6 +67,7 @@ namespace LW.Util.EasyButton.Editor
             DisplayName   = easyButtonAttribute.Name ?? methodInfo.Name;
             Order         = easyButtonAttribute.Order;
             DefaultExpand = easyButtonAttribute.DefaultExpand;
+            EnableMode    = easyButtonAttribute.EnableMode;
             var methodParameters = methodInfo.GetParameters();
             if (methodInfo.IsStatic)
             {
@@ -164,6 +167,17 @@ namespace LW.Util.EasyButton.Editor
                 return Expression.Lambda<Func<IParameterInfo[]>>(Expression.Block(
                                                                                  variableList, bodyList)).Compile();
             }
+        }
+
+        public bool CheckEnable()
+        {
+            return EnableMode switch
+            {
+                EnableMode.AlwaysEnable => true,
+                EnableMode.EditModeEnable => !Application.isPlaying,
+                EnableMode.PlayModeEnable => Application.isPlaying,
+                _ => false,
+            };
         }
     }
 

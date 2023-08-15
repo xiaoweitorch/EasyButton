@@ -252,6 +252,11 @@ namespace LW.Util.EasyButton.Editor
             {
                 foreach (var buttonInfo in sortedInfos)
                 {
+                    if (!buttonInfo.CheckEnable())
+                    {
+                        continue;
+                    }
+                    
                     var buttonView = CreateButtonView(buttonInfo);
                     Add(buttonView);
                 }
@@ -260,13 +265,18 @@ namespace LW.Util.EasyButton.Editor
             {
                 foreach (var buttonInfo in sortedInfos)
                 {
+                    if (!buttonInfo.CheckEnable())
+                    {
+                        continue;
+                    }
+                    
                     var buttonView = CreateButtonView(buttonInfo);
                     Container.Add(buttonView);
                 }
                 Add(Container);
             }
         }
-
+        
         private VisualElement CreateButtonView(ButtonInfo buttonInfo)
         {
             if (buttonInfo.IsStatic)

@@ -2,6 +2,13 @@
 
 namespace LW.Util.EasyButton
 {
+    public enum EnableMode
+    {
+        AlwaysEnable,
+        PlayModeEnable,
+        EditModeEnable,
+    }
+    
     public class EasyButtonAttribute : Attribute
     {
         #region optional params
@@ -14,6 +21,8 @@ namespace LW.Util.EasyButton
         /// only work when have params
         /// </summary>
         public bool DefaultExpand { get; set; }
+        
+        public EnableMode EnableMode { get; set; }
 
         #endregion
 

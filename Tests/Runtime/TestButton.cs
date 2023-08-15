@@ -44,5 +44,15 @@ namespace LW.Util.EasyButton.Tests
         {
             return 0;
         }
+
+        [EasyButton(EnableMode = EnableMode.PlayModeEnable)]
+        public void TestPlayModeEnable()
+        {
+        }
+
+        [EasyButton(EnableMode = EnableMode.EditModeEnable)]
+        public void TestEditModeEnable()
+        {
+        }
     }
 }
