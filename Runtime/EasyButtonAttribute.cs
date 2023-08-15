@@ -8,6 +8,12 @@ namespace LW.Util.EasyButton
 
         public string Name  { get; set; }
         public int    Order { get; set; }
+        
+        /// <summary>
+        /// control parameter foldout default expandable
+        /// only work when have params
+        /// </summary>
+        public bool DefaultExpand { get; set; }
 
         #endregion
 

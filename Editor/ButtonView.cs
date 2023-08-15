@@ -81,6 +81,7 @@ namespace LW.Util.EasyButton.Editor
 
             Container.text = Info.DisplayName;
             Params.AddRange(Info.CreateDefaultParams.Invoke());
+            Container.value = Info.DefaultExpand;
             foreach (var parameterInfo in Params)
             {
                 var propertyView = PropertyViewProvider<IParameterInfo>.GetPropertyView(parameterInfo.ValueType);
@@ -192,7 +193,8 @@ namespace LW.Util.EasyButton.Editor
                 return;
             }
 
-            Container.text = Info.DisplayName;
+            Container.text  = Info.DisplayName;
+            Container.value = Info.DefaultExpand;
             Params.AddRange(Info.CreateDefaultParams.Invoke());
             foreach (var parameterInfo in Params)
             {

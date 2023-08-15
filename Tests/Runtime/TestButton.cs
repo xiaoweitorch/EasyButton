@@ -24,7 +24,7 @@ namespace LW.Util.EasyButton.Tests
             Debug.LogError($"[EasyButton]static log error");
         }
 
-        [EasyButton(3u)]
+        [EasyButton(3u, DefaultExpand = true)]
         public static uint StaticLogWithParam(uint a = 2)
         {
             Debug.LogError($"a={a}");

@@ -39,10 +39,11 @@ namespace LW.Util.EasyButton.Editor
                           || (TriggerStaticWithParams != null && CreateDefaultParams != null)
                           || (TriggerWithParams != null && CreateDefaultParams != null);
 
-        public string     DisplayName { get; }
-        public bool       IsStatic    => Info.IsStatic;
-        public MethodInfo Info        { get; }
-        public int        Order       { get; }
+        public string     DisplayName   { get; }
+        public bool       IsStatic      => Info.IsStatic;
+        public MethodInfo Info          { get; }
+        public int        Order         { get; }
+        public bool       DefaultExpand { get; }
 
         public ButtonInfo(MethodInfo methodInfo)
         {
@@ -59,10 +60,11 @@ namespace LW.Util.EasyButton.Editor
                 return;
             }
 
-            // HACK: lw 暂时处理无参、无返回值情况
-            Info        = methodInfo;
-            DisplayName = easyButtonAttribute.Name ?? methodInfo.Name;
-            Order       = easyButtonAttribute.Order;
+            // HACK: lw 无返回值情况
+            Info          = methodInfo;
+            DisplayName   = easyButtonAttribute.Name ?? methodInfo.Name;
+            Order         = easyButtonAttribute.Order;
+            DefaultExpand = easyButtonAttribute.DefaultExpand;
             var methodParameters = methodInfo.GetParameters();
             if (methodInfo.IsStatic)
             {
