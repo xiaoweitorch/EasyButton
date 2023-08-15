@@ -54,5 +54,12 @@ namespace LW.Util.EasyButton.Tests
         public void TestEditModeEnable()
         {
         }
+        
+        [EasyButton(".A", null, false, Order = 1)]
+        public int LogWithInstanceParam(int a, Transform tf, bool c = true)
+        {
+            Debug.LogError($"a={a} transform={tf}");
+            return a;
+        }
     }
 }

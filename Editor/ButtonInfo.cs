@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
+using LW.Util.EasyButton.Editor.View;
 using UnityEngine;
 
 namespace LW.Util.EasyButton.Editor
@@ -10,6 +11,7 @@ namespace LW.Util.EasyButton.Editor
     {
         public object Value     { get; set; }
         public Type   ValueType { get; }
+        public bool   Assign    { get; }
     }
 
     public class ParameterInfo<T> : IParameterInfo
@@ -23,6 +25,27 @@ namespace LW.Util.EasyButton.Editor
         }
 
         public Type ValueType { get; } = typeof(T);
+        public bool Assign    => true;
+    }
+
+    public class FieldParameterInfo<TObj, TVar> : IParameterInfo
+    {
+        public  TObj             Data         { get; }
+        private Func<TObj, TVar> GetValueFunc { get; }
+
+        public FieldParameterInfo(TObj data, string fieldPath)
+        {
+            Data         = data;
+            GetValueFunc = PropertyViewUtils.GetValueFunc<TObj, TVar>(fieldPath);
+        }
+
+        public object Value
+        {
+            get => GetValueFunc.Invoke(Data);
+            set => throw new NotSupportedException();
+        }
+        public Type   ValueType { get; } = typeof(TVar);
+        public bool   Assign    => false;
     }
 
     public class ButtonInfo
@@ -32,7 +55,7 @@ namespace LW.Util.EasyButton.Editor
         public Action<object>           TriggerWithoutParams       { get; }
         public Action<object, object[]> TriggerWithParams          { get; }
 
-        public Func<IParameterInfo[]> CreateDefaultParams { get; }
+        public Func<object, IParameterInfo[]> CreateDefaultParams { get; }
 
         public bool Valid => TriggerWithoutParams != null
                           || TriggerStaticWithoutParams != null
@@ -44,7 +67,7 @@ namespace LW.Util.EasyButton.Editor
         public MethodInfo Info          { get; }
         public int        Order         { get; }
         public bool       DefaultExpand { get; }
-        
+
         public EnableMode EnableMode { get; }
 
         public ButtonInfo(MethodInfo methodInfo)
@@ -120,9 +143,9 @@ namespace LW.Util.EasyButton.Editor
                 }
             }
 
-            CreateDefaultParams =  CreateDefaultParamsFunc();
-            
-            Func<IParameterInfo[]> CreateDefaultParamsFunc()
+            CreateDefaultParams = CreateDefaultParamsFunc();
+
+            Func<object, IParameterInfo[]> CreateDefaultParamsFunc()
             {
                 if (methodParameters.Length == 0)
                 {
@@ -134,38 +157,76 @@ namespace LW.Util.EasyButton.Editor
                 {
                     return null;
                 }
-            
+
+                var p        = Expression.Parameter(typeof(object), "obj");
+                
+                var instance = Expression.TypeAs(p, Info.DeclaringType!);
+
                 var variableList = new List<ParameterExpression>();
                 var bodyList     = new List<Expression>();
                 for (var index = 0; index < methodParameters.Length; ++index)
                 {
-                    var methodParameter = methodParameters[index];
-
-                    var parameterType    = typeof(ParameterInfo<>).MakeGenericType(methodParameter.ParameterType);
-                    var newParameterInfo = Expression.New(parameterType);
-                        
-                    var variable = Expression.Variable(parameterType);
-                    variableList.Add(variable);
-                        
-                    var assignExpression = Expression.Assign(variable, newParameterInfo);
-                    bodyList.Add(assignExpression);
-
+                    var methodParameter       = methodParameters[index];
                     var attributeDefaultValue = easyButtonAttribute.DefaultValues?[index];
-                    if (!methodParameter.HasDefaultValue && attributeDefaultValue == null)
+                    if (attributeDefaultValue == null)
                     {
-                        continue;
-                    }
+                        var parameterType    = typeof(ParameterInfo<>).MakeGenericType(methodParameter.ParameterType);
+                        var newParameterInfo = Expression.New(parameterType);
+
+                        var variable = Expression.Variable(parameterType);
+                        variableList.Add(variable);
+
+                        var assignExpression = Expression.Assign(variable, newParameterInfo);
+                        bodyList.Add(assignExpression);
                     
-                    var valueExpression = Expression.PropertyOrField(variable, nameof(ParameterInfo<int>.InnerValue));
-                    var assignDefaultExpression =
-                        Expression.Assign(valueExpression, Expression.Constant(attributeDefaultValue ?? methodParameter.DefaultValue));
-                    bodyList.Add(assignDefaultExpression);
+                        if (!methodParameter.HasDefaultValue)
+                        {
+                            continue;
+                        }
+
+                        var valueExpression = Expression.PropertyOrField(variable, nameof(ParameterInfo<int>.InnerValue));
+                        var assignDefaultExpression =
+                            Expression.Assign(valueExpression,
+                                              Expression.Constant(methodParameter.DefaultValue));
+                        bodyList.Add(assignDefaultExpression);
+                    }
+                    else if (attributeDefaultValue is string str  && str.StartsWith("."))
+                    {
+                        var fieldPath        = str.Substring(1);
+                        var parameterType    = typeof(FieldParameterInfo<,>).MakeGenericType(Info.DeclaringType, methodParameter.ParameterType);
+                        var constructorInfo =
+                            parameterType.GetConstructor(new[] { Info.DeclaringType, typeof(string) });
+                        var newParameterInfo = Expression.New(constructorInfo!, instance, Expression.Constant(fieldPath));
+
+                        var variable = Expression.Variable(parameterType);
+                        variableList.Add(variable);
+
+                        var assignExpression = Expression.Assign(variable, newParameterInfo);
+                        bodyList.Add(assignExpression);
+                    }
+                    else
+                    {
+                        var parameterType    = typeof(ParameterInfo<>).MakeGenericType(methodParameter.ParameterType);
+                        var newParameterInfo = Expression.New(parameterType);
+
+                        var variable = Expression.Variable(parameterType);
+                        variableList.Add(variable);
+
+                        var assignExpression = Expression.Assign(variable, newParameterInfo);
+                        bodyList.Add(assignExpression);
+
+                        var valueExpression = Expression.PropertyOrField(variable, nameof(ParameterInfo<int>.InnerValue));
+                        var assignDefaultExpression =
+                            Expression.Assign(valueExpression,
+                                              Expression.Constant(attributeDefaultValue));
+                        bodyList.Add(assignDefaultExpression);
+                    }
                 }
 
                 var createArray = Expression.NewArrayInit(typeof(IParameterInfo), variableList);
                 bodyList.Add(createArray);
-                return Expression.Lambda<Func<IParameterInfo[]>>(Expression.Block(
-                                                                                 variableList, bodyList)).Compile();
+                return Expression.Lambda<Func<object, IParameterInfo[]>>(Expression.Block(
+                                                                          variableList, bodyList), p).Compile();
             }
         }
 
@@ -173,10 +234,10 @@ namespace LW.Util.EasyButton.Editor
         {
             return EnableMode switch
             {
-                EnableMode.AlwaysEnable => true,
+                EnableMode.AlwaysEnable   => true,
                 EnableMode.EditModeEnable => !Application.isPlaying,
                 EnableMode.PlayModeEnable => Application.isPlaying,
-                _ => false,
+                _                         => false,
             };
         }
     }

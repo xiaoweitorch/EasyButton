@@ -51,6 +51,7 @@ namespace LW.Util.EasyButton.Editor
     public class ButtonStaticWithParamsView : VisualElement
     {
         public ButtonInfo           Info      { get; private set; }
+        public object               Instance  { get; private set; }
         public Foldout              Container { get; }
         public List<IParameterInfo> Params    { get; } = new();
 
@@ -69,9 +70,10 @@ namespace LW.Util.EasyButton.Editor
             }
         }
 
-        public void Initialize(ButtonInfo info)
+        public void Initialize(ButtonInfo info, object instance)
         {
-            Info = info;
+            Info     = info;
+            Instance = instance;
 
             if (Info == null || !info.Valid || !info.IsStatic)
             {
@@ -80,10 +82,15 @@ namespace LW.Util.EasyButton.Editor
             }
 
             Container.text = Info.DisplayName;
-            Params.AddRange(Info.CreateDefaultParams.Invoke());
+            Params.AddRange(Info.CreateDefaultParams.Invoke(Instance));
             Container.value = Info.DefaultExpand;
             foreach (var parameterInfo in Params)
             {
+                if (!parameterInfo.Assign)
+                {
+                    continue;
+                }
+                
                 var propertyView = PropertyViewProvider<IParameterInfo>.GetPropertyView(parameterInfo.ValueType);
                 propertyView.Initialize(parameterInfo, nameof(IParameterInfo.Value));
                 Container.Add(propertyView);
@@ -195,9 +202,14 @@ namespace LW.Util.EasyButton.Editor
 
             Container.text  = Info.DisplayName;
             Container.value = Info.DefaultExpand;
-            Params.AddRange(Info.CreateDefaultParams.Invoke());
+            Params.AddRange(Info.CreateDefaultParams.Invoke(Instance));
             foreach (var parameterInfo in Params)
             {
+                if (!parameterInfo.Assign)
+                {
+                    continue;
+                }
+                
                 var propertyView = PropertyViewProvider<IParameterInfo>.GetPropertyView(parameterInfo.ValueType);
                 propertyView.Initialize(parameterInfo, nameof(IParameterInfo.Value));
                 Container.Add(propertyView);
@@ -284,7 +296,7 @@ namespace LW.Util.EasyButton.Editor
                 if (buttonInfo.Info.GetParameters().Length > 0)
                 {
                     var buttonView = new ButtonStaticWithParamsView();
-                    buttonView.Initialize(buttonInfo);
+                    buttonView.Initialize(buttonInfo, Instance);
                     return buttonView;
                 }
                 else

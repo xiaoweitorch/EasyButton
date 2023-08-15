@@ -32,6 +32,13 @@ namespace LW.Util.EasyButton
         {
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="defaultValues">
+        /// must write match type value
+        /// when using str startWith ".", treat as bind with instance fieldOrProperty
+        /// </param>
         public EasyButtonAttribute(params object[] defaultValues)
         {
             DefaultValues = defaultValues;
