@@ -8,6 +8,14 @@ namespace LW.Util.EasyButton
         PlayModeEnable,
         EditModeEnable,
     }
+
+    public enum PrintLevel
+    {
+        None,
+        Debug,
+        Warn,
+        Error,
+    }
     
     public class EasyButtonAttribute : Attribute
     {
@@ -23,6 +31,8 @@ namespace LW.Util.EasyButton
         public bool DefaultExpand { get; set; }
         
         public EnableMode EnableMode { get; set; }
+        
+        public PrintLevel PrintReturn { get; set; }
 
         #endregion
 

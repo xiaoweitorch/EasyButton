@@ -44,8 +44,9 @@ namespace LW.Util.EasyButton.Editor
             get => GetValueFunc.Invoke(Data);
             set => throw new NotSupportedException();
         }
-        public Type   ValueType { get; } = typeof(TVar);
-        public bool   Assign    => false;
+
+        public Type ValueType { get; } = typeof(TVar);
+        public bool Assign    => false;
     }
 
     public class ButtonInfo
@@ -70,6 +71,8 @@ namespace LW.Util.EasyButton.Editor
 
         public EnableMode EnableMode { get; }
 
+        public PrintLevel PrintReturn { get; }
+
         public ButtonInfo(MethodInfo methodInfo)
         {
             var easyButtonAttribute = methodInfo.GetCustomAttribute<EasyButtonAttribute>();
@@ -85,61 +88,33 @@ namespace LW.Util.EasyButton.Editor
                 return;
             }
 
-            // HACK: lw 无返回值情况
             Info          = methodInfo;
             DisplayName   = easyButtonAttribute.Name ?? methodInfo.Name;
             Order         = easyButtonAttribute.Order;
             DefaultExpand = easyButtonAttribute.DefaultExpand;
             EnableMode    = easyButtonAttribute.EnableMode;
+            PrintReturn   = easyButtonAttribute.PrintReturn;
             var methodParameters = methodInfo.GetParameters();
             if (methodInfo.IsStatic)
             {
                 if (methodParameters.Length == 0)
                 {
-                    var invoke = Expression.Call(methodInfo);
-                    TriggerStaticWithoutParams = Expression.Lambda<Action>(invoke).Compile();
+                    TriggerStaticWithoutParams = CreateStaticWithoutParams();
                 }
                 else
                 {
-                    var parameters            = Expression.Parameter(typeof(object[]), "parameters");
-                    var parametersConvertList = new List<Expression>();
-                    for (var index = 0; index < methodParameters.Length; ++index)
-                    {
-                        var methodParameter = methodParameters[index];
-                        var parameter       = Expression.ArrayIndex(parameters, Expression.Constant(index));
-                        var convertParam    = Expression.Convert(parameter, methodParameter.ParameterType);
-                        parametersConvertList.Add(convertParam);
-                    }
-
-                    var invoke = Expression.Call(methodInfo, parametersConvertList);
-                    TriggerStaticWithParams = Expression.Lambda<Action<object[]>>(invoke, parameters).Compile();
+                    TriggerStaticWithParams = CreateStaticWithParams();
                 }
             }
             else
             {
                 if (methodParameters.Length == 0)
                 {
-                    var p        = Expression.Parameter(typeof(object), "obj");
-                    var instance = Expression.TypeAs(p, methodInfo.DeclaringType);
-                    var invoke   = Expression.Call(instance, methodInfo);
-                    TriggerWithoutParams = Expression.Lambda<Action<object>>(invoke, p).Compile();
+                    TriggerWithoutParams = CreateWithoutParams();
                 }
                 else
                 {
-                    var p                     = Expression.Parameter(typeof(object), "obj");
-                    var instance              = Expression.TypeAs(p, methodInfo.DeclaringType);
-                    var parameters            = Expression.Parameter(typeof(object[]), "parameters");
-                    var parametersConvertList = new List<Expression>();
-                    for (var index = 0; index < methodParameters.Length; ++index)
-                    {
-                        var methodParameter = methodParameters[index];
-                        var parameter       = Expression.ArrayIndex(parameters, Expression.Constant(index));
-                        var convertParam    = Expression.Convert(parameter, methodParameter.ParameterType);
-                        parametersConvertList.Add(convertParam);
-                    }
-
-                    var invoke = Expression.Call(instance, methodInfo, parametersConvertList);
-                    TriggerWithParams = Expression.Lambda<Action<object, object[]>>(invoke, p, parameters).Compile();
+                    TriggerWithParams = CreateWithParams();
                 }
             }
 
@@ -158,8 +133,8 @@ namespace LW.Util.EasyButton.Editor
                     return null;
                 }
 
-                var p        = Expression.Parameter(typeof(object), "obj");
-                
+                var p = Expression.Parameter(typeof(object), "obj");
+
                 var instance = Expression.TypeAs(p, Info.DeclaringType!);
 
                 var variableList = new List<ParameterExpression>();
@@ -178,25 +153,29 @@ namespace LW.Util.EasyButton.Editor
 
                         var assignExpression = Expression.Assign(variable, newParameterInfo);
                         bodyList.Add(assignExpression);
-                    
+
                         if (!methodParameter.HasDefaultValue)
                         {
                             continue;
                         }
 
-                        var valueExpression = Expression.PropertyOrField(variable, nameof(ParameterInfo<int>.InnerValue));
+                        var valueExpression =
+                            Expression.PropertyOrField(variable, nameof(ParameterInfo<int>.InnerValue));
                         var assignDefaultExpression =
                             Expression.Assign(valueExpression,
                                               Expression.Constant(methodParameter.DefaultValue));
                         bodyList.Add(assignDefaultExpression);
                     }
-                    else if (attributeDefaultValue is string str  && str.StartsWith("."))
+                    else if (attributeDefaultValue is string str && str.StartsWith("."))
                     {
-                        var fieldPath        = str.Substring(1);
-                        var parameterType    = typeof(FieldParameterInfo<,>).MakeGenericType(Info.DeclaringType, methodParameter.ParameterType);
+                        var fieldPath = str.Substring(1);
+                        var parameterType =
+                            typeof(FieldParameterInfo<,>).MakeGenericType(Info.DeclaringType,
+                                                                          methodParameter.ParameterType);
                         var constructorInfo =
                             parameterType.GetConstructor(new[] { Info.DeclaringType, typeof(string) });
-                        var newParameterInfo = Expression.New(constructorInfo!, instance, Expression.Constant(fieldPath));
+                        var newParameterInfo =
+                            Expression.New(constructorInfo!, instance, Expression.Constant(fieldPath));
 
                         var variable = Expression.Variable(parameterType);
                         variableList.Add(variable);
@@ -215,7 +194,8 @@ namespace LW.Util.EasyButton.Editor
                         var assignExpression = Expression.Assign(variable, newParameterInfo);
                         bodyList.Add(assignExpression);
 
-                        var valueExpression = Expression.PropertyOrField(variable, nameof(ParameterInfo<int>.InnerValue));
+                        var valueExpression =
+                            Expression.PropertyOrField(variable, nameof(ParameterInfo<int>.InnerValue));
                         var assignDefaultExpression =
                             Expression.Assign(valueExpression,
                                               Expression.Constant(attributeDefaultValue));
@@ -226,7 +206,111 @@ namespace LW.Util.EasyButton.Editor
                 var createArray = Expression.NewArrayInit(typeof(IParameterInfo), variableList);
                 bodyList.Add(createArray);
                 return Expression.Lambda<Func<object, IParameterInfo[]>>(Expression.Block(
-                                                                          variableList, bodyList), p).Compile();
+                                                                              variableList, bodyList), p).Compile();
+            }
+
+            Action CreateStaticWithoutParams()
+            {
+                var body = Expression.Call(methodInfo);
+                if (PrintReturn != PrintLevel.None && methodInfo.ReturnType != typeof(void))
+                {
+                    var printMethodInfo = GetPrintMethodInfo(PrintReturn);
+                    body = Expression.Call(printMethodInfo, Expression.Convert(body, typeof(object)));
+                }
+
+                return Expression.Lambda<Action>(body).Compile();
+            }
+
+            Action<object[]> CreateStaticWithParams()
+            {
+                var parameters            = Expression.Parameter(typeof(object[]), "parameters");
+                var parametersConvertList = new List<Expression>();
+                for (var index = 0; index < methodParameters.Length; ++index)
+                {
+                    var methodParameter = methodParameters[index];
+                    var parameter       = Expression.ArrayIndex(parameters, Expression.Constant(index));
+                    var convertParam    = Expression.Convert(parameter, methodParameter.ParameterType);
+                    parametersConvertList.Add(convertParam);
+                }
+
+                var invoke = Expression.Call(methodInfo, parametersConvertList);
+                if (PrintReturn != PrintLevel.None && methodInfo.ReturnType != typeof(void))
+                {
+                    var printMethodInfo = GetPrintMethodInfo(PrintReturn);
+                    invoke = Expression.Call(printMethodInfo, Expression.Convert(invoke, typeof(object)));
+                }
+
+                return Expression.Lambda<Action<object[]>>(invoke, parameters).Compile();
+            }
+
+            Action<object> CreateWithoutParams()
+            {
+                var p        = Expression.Parameter(typeof(object), "obj");
+                var instance = Expression.TypeAs(p, methodInfo.DeclaringType);
+                var invoke   = Expression.Call(instance, methodInfo);
+                if (PrintReturn != PrintLevel.None && methodInfo.ReturnType != typeof(void))
+                {
+                    var printMethodInfo = GetPrintMethodInfo(PrintReturn);
+                    invoke = Expression.Call(printMethodInfo, Expression.Convert(invoke, typeof(object)));
+                }
+
+                return Expression.Lambda<Action<object>>(invoke, p).Compile();
+            }
+
+            Action<object, object[]> CreateWithParams()
+            {
+                var p                     = Expression.Parameter(typeof(object), "obj");
+                var instance              = Expression.TypeAs(p, methodInfo.DeclaringType);
+                var parameters            = Expression.Parameter(typeof(object[]), "parameters");
+                var parametersConvertList = new List<Expression>();
+                for (var index = 0; index < methodParameters.Length; ++index)
+                {
+                    var methodParameter = methodParameters[index];
+                    var parameter       = Expression.ArrayIndex(parameters, Expression.Constant(index));
+                    var convertParam    = Expression.Convert(parameter, methodParameter.ParameterType);
+                    parametersConvertList.Add(convertParam);
+                }
+
+                var invoke = Expression.Call(instance, methodInfo, parametersConvertList);
+                if (PrintReturn != PrintLevel.None && methodInfo.ReturnType != typeof(void))
+                {
+                    var printMethodInfo = GetPrintMethodInfo(PrintReturn);
+                    invoke = Expression.Call(printMethodInfo, Expression.Convert(invoke, typeof(object)));
+                }
+
+                return Expression.Lambda<Action<object, object[]>>(invoke, p, parameters).Compile();
+            }
+        }
+
+        private static MethodInfo GetPrintMethodInfo(PrintLevel printLevel)
+        {
+            switch (printLevel)
+            {
+                case PrintLevel.None:
+                {
+                    return null;
+                }
+                case PrintLevel.Debug:
+                {
+                    return typeof(Debug).GetMethod(nameof(Debug.Log), BindingFlags.Static | BindingFlags.Public, null,
+                                                   new Type[] { typeof(object) }, null);
+                }
+                case PrintLevel.Warn:
+                {
+                    return typeof(Debug).GetMethod(nameof(Debug.LogWarning), BindingFlags.Static | BindingFlags.Public,
+                                                   null,
+                                                   new Type[] { typeof(object) }, null);
+                }
+                case PrintLevel.Error:
+                {
+                    return typeof(Debug).GetMethod(nameof(Debug.LogError), BindingFlags.Static | BindingFlags.Public,
+                                                   null,
+                                                   new Type[] { typeof(object) }, null);
+                }
+                default:
+                {
+                    return null;
+                }
             }
         }
 

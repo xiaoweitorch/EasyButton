@@ -38,8 +38,7 @@ namespace LW.Util.EasyButton.Tests
             return a;
         }
 
-        // TODO: lw not support return value
-        [EasyButton]
+        [EasyButton(PrintReturn = PrintLevel.Error)]
         public int LogErrorWithReturn()
         {
             return 0;
@@ -55,11 +54,11 @@ namespace LW.Util.EasyButton.Tests
         {
         }
         
-        [EasyButton(".A", null, false, Order = 1)]
-        public int LogWithInstanceParam(int a, Transform tf, bool c = true)
+        [EasyButton(".A", null, false, Order = 1, PrintReturn = PrintLevel.Error)]
+        public Transform LogWithInstanceParam(int a, Transform tf, bool c = true)
         {
             Debug.LogError($"a={a} transform={tf}");
-            return a;
+            return transform;
         }
     }
 }
