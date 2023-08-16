@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using LW.Util.EasyButton.Editor.View;
 using UnityEngine.UIElements;
 
 namespace LW.Util.EasyButton.Editor
@@ -91,9 +90,9 @@ namespace LW.Util.EasyButton.Editor
                     continue;
                 }
                 
-                var propertyView = PropertyViewProvider<IParameterInfo>.GetPropertyView(parameterInfo.ValueType);
-                propertyView.Initialize(parameterInfo, nameof(IParameterInfo.Value));
-                Container.Add(propertyView);
+                // var propertyView = PropertyViewProvider<IParameterInfo>.GetPropertyView(parameterInfo.ValueType);
+                // propertyView.Initialize(parameterInfo, nameof(IParameterInfo.Value));
+                // Container.Add(propertyView);
             }
         }
 
@@ -210,9 +209,9 @@ namespace LW.Util.EasyButton.Editor
                     continue;
                 }
                 
-                var propertyView = PropertyViewProvider<IParameterInfo>.GetPropertyView(parameterInfo.ValueType);
-                propertyView.Initialize(parameterInfo, nameof(IParameterInfo.Value));
-                Container.Add(propertyView);
+                // var propertyView = PropertyViewProvider<IParameterInfo>.GetPropertyView(parameterInfo.ValueType);
+                // propertyView.Initialize(parameterInfo, nameof(IParameterInfo.Value));
+                // Container.Add(propertyView);
             }
         }
 

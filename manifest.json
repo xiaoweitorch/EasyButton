@@ -1,0 +1,5 @@
+﻿{
+  "dependencies": {
+    "com.leadingwerido.propertyview": "https://github.com/xiaoweitorch/LWPropertyView.git"
+  }
+}

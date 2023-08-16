@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
-using LW.Util.EasyButton.Editor.View;
 using UnityEngine;
 
 namespace LW.Util.EasyButton.Editor
@@ -36,7 +35,7 @@ namespace LW.Util.EasyButton.Editor
         public FieldParameterInfo(TObj data, string fieldPath)
         {
             Data         = data;
-            GetValueFunc = PropertyViewUtils.GetValueFunc<TObj, TVar>(fieldPath);
+            // GetValueFunc = PropertyViewUtils.GetValueFunc<TObj, TVar>(fieldPath);
         }
 
         public object Value
