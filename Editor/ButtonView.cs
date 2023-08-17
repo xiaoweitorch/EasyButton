@@ -6,6 +6,28 @@ using LW.Util.PropertyView.Editor;
 
 namespace LW.Util.EasyButton.Editor
 {
+    public static class ButtonViewUtil
+    {
+        public static ButtonsView CreateButtonsView(object obj)
+        {
+            if (obj == null)
+            {
+                return null;
+            }
+            
+            var type        = obj.GetType();
+            var buttonsInfo = ButtonsInfoProvider.GetButtonsInfo(type);
+            if (buttonsInfo == null || buttonsInfo.Infos == null || buttonsInfo.Infos.Count == 0)
+            {
+                return null;
+            }
+            
+            var buttonsView = new ButtonsView();
+            buttonsView.Initialize(buttonsInfo, obj);
+            return buttonsView;
+        }
+    }
+    
     public class ButtonStaticWithoutParamsView : VisualElement
     {
         public ButtonInfo Info         { get; private set; }
