@@ -2,7 +2,8 @@
     "name": "leadingwerido.easybutton.Editor",
     "rootNamespace": "LW.Util.EasyButton.Editor",
     "references": [
-        "leadingwerido.easybutton"
+        "leadingwerido.easybutton",
+        "leadingwerido.propertyview.Editor"
     ],
     "includePlatforms": [
         "Editor"

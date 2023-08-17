@@ -210,9 +210,9 @@ namespace LW.Util.EasyButton.Editor
                     continue;
                 }
                 
-                // var propertyView = PropertyViewProvider<IParameterInfo>.GetPropertyView(parameterInfo.ValueType);
-                // propertyView.Initialize(parameterInfo, nameof(IParameterInfo.Value));
-                // Container.Add(propertyView);
+                var propertyView = PropertyViewProvider<IParameterInfo>.GetPropertyView(parameterInfo.ValueType);
+                propertyView.Initialize(parameterInfo, nameof(IParameterInfo.Value));
+                Container.Add(propertyView);
             }
         }
 
